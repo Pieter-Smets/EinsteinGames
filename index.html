@@ -104,8 +104,8 @@
     </div>
 
     <script>
-        // Data source: Change to your active file or live link
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRPp-_3q8eKAynOcrOs51zcpUpXEWOO2Bczf5Z6v2YbQ8W-eRYW2t5PnRT4SOVWDTQ-SlJ0dWSdmFu2/pubhtml';
+        // Data source: Change to your active file
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRPp-_3q8eKAynOcrOs51zcpUpXEWOO2Bczf5Z6v2YbQ8W-eRYW2t5PnRT4SOVWDTQ-SlJ0dWSdmFu2/pub?output=csv';
 
         async function fetchLeaderboard() {
             try {
@@ -121,28 +121,8 @@
             }
         }
 
-        // A precise parser that handles quotes and respects empty columns
-        function parseCSVLine(line) {
-            let result = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                if (char === '"') {
-                    inQuotes = !inQuotes; // Toggle quote state
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.trim()); // End of column
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            result.push(current.trim());
-            return result;
-        }
-
         function parseAndRenderCSV(csvText) {
+            // A more robust regex to split CSV lines, handling commas inside quotes
             const rows = csvText.split(/\r?\n/);
             const boardContent = document.getElementById('board-content');
             boardContent.innerHTML = ''; 
@@ -153,26 +133,37 @@
                 const row = rows[i].trim();
                 if (!row) continue;
 
-                const cols = parseCSVLine(row);
+                // This regex splits by comma, but ignores commas inside double quotes
+                // It also removes the surrounding quotes from the resulting strings
+                let cols = [];
+                let match;
+                const regex = /"([^"]*)"|([^,]+)/g;
+                
+                while (match = regex.exec(row)) {
+                    // match[1] is the value if it was in quotes, match[2] is the value without quotes
+                    cols.push(match[1] !== undefined ? match[1] : match[2]);
+                }
 
-                // Make sure we have at least 2 columns
+                // Clean up any remaining whitespace
+                cols = cols.map(c => c ? c.trim() : '');
+
                 if (cols.length >= 2) {
                     const klas = cols[0];
                     let scoreStr = cols[1];
 
-                    // Skip rows where the class column is empty, 'klas', or 'NaN'
+                    // Skip the first two junk rows (NaN and the header row)
                     if (!klas || klas === 'NaN' || klas.toLowerCase() === 'klas' || klas.toLowerCase() === 'unnamed: 0') {
                         continue; 
                     }
 
-                    // Convert comma to dot for JavaScript to understand the number
-                    let cleanScoreStr = scoreStr.replace(',', '.');
+                    // Replace comma with dot for JavaScript math, handle cases where quotes might have leaked
+                    let cleanScoreStr = scoreStr.replace(/"/g, '').replace(',', '.');
                     const scoreNum = parseFloat(cleanScoreStr);
 
                     if (!isNaN(scoreNum)) {
                         teams.push({ 
                             klas: klas, 
-                            // Format back to European style (comma) for display without quotes
+                            // Format back to European style for display
                             scoreDisplay: scoreNum.toString().replace('.', ','), 
                             scoreValue: scoreNum 
                         });
@@ -188,7 +179,7 @@
             // Sort teams highest to lowest
             teams.sort((a, b) => b.scoreValue - a.scoreValue);
 
-            // Render the rows
+            // Render
             teams.forEach((team, index) => {
                 const rank = index + 1;
                 const rowDiv = document.createElement('div');
@@ -207,7 +198,7 @@
         // Initialize
         fetchLeaderboard();
         
-        // Refresh every 60 seconds automatically
+        // Refresh every 60 seconds (useful if using live Google Sheet link)
         // setInterval(fetchLeaderboard, 60000); 
     </script>
 </body>
