@@ -104,13 +104,8 @@
     </div>
 
     <script>
-        // Data source: You can use your local CSV file here:
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRPp-_3q8eKAynOcrOs51zcpUpXEWOO2Bczf5Z6v2YbQ8W-eRYW2t5PnRT4SOVWDTQ-SlJ0dWSdmFu2/pub?output=csv';
-        
-        // TO USE A LIVE GOOGLE SHEET INSTEAD:
-        // 1. Go to File > Share > Publish to web
-        // 2. Choose your specific sheet (e.g., Tussenstand_Algemeen) and "CSV" format
-        // 3. Paste the provided link above in place of the filename.
+        // Update this URL to your live Google Sheet CSV link or local file
+        const CSV_URL = 'score_Einstein_Games_scores_EV.csv'; 
 
         async function fetchLeaderboard() {
             try {
@@ -126,50 +121,87 @@
             }
         }
 
-        function parseAndRenderCSV(csvText) {
-            // Split by rows and remove empty lines
-            const rows = csvText.split('\n').map(row => row.trim()).filter(row => row);
-            
-            // Assuming row 0 is headers: plaats, klas, score
-            const dataRows = rows.slice(1);
-            
-            const boardContent = document.getElementById('board-content');
-            boardContent.innerHTML = ''; // Clear loading text
+        // A smarter parser that ignores commas inside quotation marks
+        function parseCSVLine(line) {
+            let result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes; // Toggle quote state
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
 
-            if (dataRows.length === 0) {
+        function parseAndRenderCSV(csvText) {
+            // Split by line breaks
+            const rows = csvText.split(/\r?\n/).filter(row => row.trim());
+            const boardContent = document.getElementById('board-content');
+            boardContent.innerHTML = ''; 
+
+            let teams = [];
+
+            rows.forEach((row) => {
+                const cols = parseCSVLine(row);
+                
+                // Based on your data, column 0 is Klas, column 1 is Punten (Score)
+                if (cols.length >= 2) {
+                    const klas = cols[0];
+                    const scoreStr = cols[1];
+
+                    // Skip the header row and any empty/invalid rows
+                    if (!klas || klas.toLowerCase() === 'klas' || klas === 'NaN') return;
+
+                    // Convert the European decimal comma to a dot so JavaScript can read the number
+                    const scoreNum = parseFloat(scoreStr.replace(',', '.'));
+
+                    if (!isNaN(scoreNum)) {
+                        // Store the data so we can sort it later
+                        teams.push({ 
+                            klas: klas, 
+                            scoreDisplay: scoreStr, // Keep the original comma for display
+                            scoreValue: scoreNum 
+                        });
+                    }
+                }
+            });
+
+            if (teams.length === 0) {
                 boardContent.innerHTML = `<div class="error">No data found.</div>`;
                 return;
             }
 
-            dataRows.forEach((row) => {
-                // Split by comma (standard CSV)
-                const cols = row.split(',');
-                if (cols.length >= 3) {
-                    const rank = cols[0].trim();
-                    const klas = cols[1].trim();
-                    const score = cols[2].trim();
+            // Sort the teams from highest score to lowest
+            teams.sort((a, b) => b.scoreValue - a.scoreValue);
 
-                    // Skip rows with empty classes/scores
-                    if (!klas || klas === 'NaN') return;
-
-                    const rowDiv = document.createElement('div');
-                    rowDiv.className = `row rank-${rank}`;
-                    
-                    rowDiv.innerHTML = `
-                        <div class="col-rank">${rank}</div>
-                        <div class="col-class">${klas}</div>
-                        <div class="col-score">${score}</div>
-                    `;
-                    
-                    boardContent.appendChild(rowDiv);
-                }
+            // Generate the rows dynamically with correct ranks
+            teams.forEach((team, index) => {
+                const rank = index + 1;
+                const rowDiv = document.createElement('div');
+                rowDiv.className = `row rank-${rank}`;
+                
+                rowDiv.innerHTML = `
+                    <div class="col-rank">${rank}</div>
+                    <div class="col-class">${team.klas}</div>
+                    <div class="col-score">${team.scoreDisplay}</div>
+                `;
+                
+                boardContent.appendChild(rowDiv);
             });
         }
 
         // Initialize
         fetchLeaderboard();
         
-        // Optional: refresh every 60 seconds automatically if using a live web link
+        // Uncomment the line below to refresh the page automatically every 60 seconds
         // setInterval(fetchLeaderboard, 60000); 
     </script>
 </body>
