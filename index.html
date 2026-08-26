@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstein Games Leaderboard</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --gold: #fbbf24;
+            --silver: #94a3b8;
+            --bronze: #b45309;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .leaderboard {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .header-row {
+            display: flex;
+            background: rgba(0,0,0,0.2);
+            padding: 1rem 1.5rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .row {
+            display: flex;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.2s;
+            align-items: center;
+        }
+
+        .row:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .col-rank { flex: 0 0 60px; font-weight: bold; font-size: 1.2rem; }
+        .col-class { flex: 1; font-size: 1.2rem; }
+        .col-score { flex: 0 0 80px; text-align: right; font-weight: bold; color: var(--accent); }
+
+        /* Medals for Top 3 */
+        .rank-1 .col-rank { color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+        .rank-2 .col-rank { color: var(--silver); }
+        .rank-3 .col-rank { color: var(--bronze); }
+
+        .loading, .error {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Einstein Games</h1>
+    <p class="subtitle">Live Leaderboard</p>
+
+    <div class="leaderboard">
+        <div class="header-row">
+            <div class="col-rank">#</div>
+            <div class="col-class">Klas (Class)</div>
+            <div class="col-score">Score</div>
+        </div>
+        <div id="board-content">
+            <div class="loading">Loading scores...</div>
+        </div>
+    </div>
+
+    <script>
+        // Data source: You can use your local CSV file here:
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRPp-_3q8eKAynOcrOs51zcpUpXEWOO2Bczf5Z6v2YbQ8W-eRYW2t5PnRT4SOVWDTQ-SlJ0dWSdmFu2/pub?output=csv';
+        
+        // TO USE A LIVE GOOGLE SHEET INSTEAD:
+        // 1. Go to File > Share > Publish to web
+        // 2. Choose your specific sheet (e.g., Tussenstand_Algemeen) and "CSV" format
+        // 3. Paste the provided link above in place of the filename.
+
+        async function fetchLeaderboard() {
+            try {
+                const response = await fetch(CSV_URL);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const csvText = await response.text();
+                
+                parseAndRenderCSV(csvText);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('board-content').innerHTML = 
+                    `<div class="error">Could not load scores. Check file path or publish settings.</div>`;
+            }
+        }
+
+        function parseAndRenderCSV(csvText) {
+            // Split by rows and remove empty lines
+            const rows = csvText.split('\n').map(row => row.trim()).filter(row => row);
+            
+            // Assuming row 0 is headers: plaats, klas, score
+            const dataRows = rows.slice(1);
+            
+            const boardContent = document.getElementById('board-content');
+            boardContent.innerHTML = ''; // Clear loading text
+
+            if (dataRows.length === 0) {
+                boardContent.innerHTML = `<div class="error">No data found.</div>`;
+                return;
+            }
+
+            dataRows.forEach((row) => {
+                // Split by comma (standard CSV)
+                const cols = row.split(',');
+                if (cols.length >= 3) {
+                    const rank = cols[0].trim();
+                    const klas = cols[1].trim();
+                    const score = cols[2].trim();
+
+                    // Skip rows with empty classes/scores
+                    if (!klas || klas === 'NaN') return;
+
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = `row rank-${rank}`;
+                    
+                    rowDiv.innerHTML = `
+                        <div class="col-rank">${rank}</div>
+                        <div class="col-class">${klas}</div>
+                        <div class="col-score">${score}</div>
+                    `;
+                    
+                    boardContent.appendChild(rowDiv);
+                }
+            });
+        }
+
+        // Initialize
+        fetchLeaderboard();
+        
+        // Optional: refresh every 60 seconds automatically if using a live web link
+        // setInterval(fetchLeaderboard, 60000); 
+    </script>
+</body>
+</html>
