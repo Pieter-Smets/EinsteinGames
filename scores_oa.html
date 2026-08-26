@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Einstein Games - Scores EV</title>
+    <title>Einstein Games - Scores OA</title>
     <style>
         /* Keeping your original styles */
         :root {
@@ -52,10 +52,73 @@
         .rank-2 .col-rank { color: var(--silver); }
         .rank-3 .col-rank { color: var(--bronze); }
         .loading, .error { text-align: center; padding: 2rem; color: var(--text-muted); }
+
+        .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 0.5rem;
+}
+
+.live-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.pulse-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.timer-bar-container {
+    width: 100%;
+    max-width: 600px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.timer-bar {
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    transition: width 1s linear;
+}
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
+    <div class="top-bar">
     <a href="index.html" class="back-btn">← Back to Menu</a>
+    <div class="live-status">
+        <div class="pulse-dot"></div>
+        <span>Live Updates</span>
+    </div>
+</div>
+
+<div class="timer-bar-container">
+    <div id="timer-bar" class="timer-bar"></div>
+</div>>
     <h1>Scores EV</h1>
     <p class="subtitle">Live Leaderboard</p>
 
@@ -71,82 +134,115 @@
     </div>
 
     <script>
-        // INSERT YOUR EV CSV LINK HERE
+        // INSERT YOUR OA CSV LINK HERE
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRPp-_3q8eKAynOcrOs51zcpUpXEWOO2Bczf5Z6v2YbQ8W-eRYW2t5PnRT4SOVWDTQ-SlJ0dWSdmFu2/pub?gid=689096365&single=true&output=csv';
 
-        async function fetchLeaderboard() {
-            try {
-                const response = await fetch(CSV_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const csvText = await response.text();
-                parseAndRenderCSV(csvText);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                document.getElementById('board-content').innerHTML = 
-                    `<div class="error">Could not load scores. Please check the file path.</div>`;
+
+const REFRESH_INTERVAL = 60; // Refresh every 60 seconds
+let timeLeft = REFRESH_INTERVAL;
+
+async function fetchLeaderboard() {
+    try {
+        const response = await fetch(CSV_URL);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const csvText = await response.text();
+        parseAndRenderCSV(csvText);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById('board-content').innerHTML = 
+            `<div class="error">Could not load scores. Please check the file path.</div>`;
+    }
+}
+
+function parseAndRenderCSV(csvText) {
+    const rows = csvText.split(/\r?\n/);
+    const boardContent = document.getElementById('board-content');
+    boardContent.innerHTML = ''; 
+    let teams = [];
+
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i].trim();
+        if (!row) continue;
+
+        let cols = [];
+        let match;
+        const regex = /"([^"]*)"|([^,]+)/g;
+        
+        while (match = regex.exec(row)) {
+            cols.push(match[1] !== undefined ? match[1] : match[2]);
+        }
+        cols = cols.map(c => c ? c.trim() : '');
+
+        if (cols.length >= 2) {
+            const klas = cols[0];
+            let scoreStr = cols[1];
+
+            if (!klas || klas === 'NaN' || klas.toLowerCase() === 'klas' || klas.toLowerCase() === 'unnamed: 0') {
+                continue; 
+            }
+
+            let cleanScoreStr = scoreStr.replace(/"/g, '').replace(',', '.');
+            const scoreNum = parseFloat(cleanScoreStr);
+
+            if (!isNaN(scoreNum)) {
+                teams.push({ 
+                    klas: klas, 
+                    scoreDisplay: scoreNum.toString().replace('.', ','), 
+                    scoreValue: scoreNum 
+                });
             }
         }
+    }
 
-        function parseAndRenderCSV(csvText) {
-            const rows = csvText.split(/\r?\n/);
-            const boardContent = document.getElementById('board-content');
-            boardContent.innerHTML = ''; 
-            let teams = [];
+    if (teams.length === 0) {
+        boardContent.innerHTML = `<div class="error">No valid data found in the CSV.</div>`;
+        return;
+    }
 
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i].trim();
-                if (!row) continue;
+    teams.sort((a, b) => b.scoreValue - a.scoreValue);
 
-                let cols = [];
-                let match;
-                const regex = /"([^"]*)"|([^,]+)/g;
-                
-                while (match = regex.exec(row)) {
-                    cols.push(match[1] !== undefined ? match[1] : match[2]);
-                }
-                cols = cols.map(c => c ? c.trim() : '');
+    teams.forEach((team, index) => {
+        const rank = index + 1;
+        const rowDiv = document.createElement('div');
+        rowDiv.className = `row rank-${rank}`;
+        rowDiv.innerHTML = `
+            <div class="col-rank">${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</div>
+            <div class="col-class">${team.klas}</div>
+            <div class="col-score">${team.scoreDisplay}</div>
+        `;
+        boardContent.appendChild(rowDiv);
+    });
 
-                if (cols.length >= 2) {
-                    const klas = cols[0];
-                    let scoreStr = cols[1];
+    // Trigger Confetti Burst for 1st Place
+    if (typeof confetti === 'function') {
+        confetti({
+            particleCount: 70,
+            spread: 60,
+            origin: { y: 0.6 }
+        });
+    }
+}
 
-                    if (!klas || klas === 'NaN' || klas.toLowerCase() === 'klas' || klas.toLowerCase() === 'unnamed: 0') {
-                        continue; 
-                    }
-
-                    let cleanScoreStr = scoreStr.replace(/"/g, '').replace(',', '.');
-                    const scoreNum = parseFloat(cleanScoreStr);
-
-                    if (!isNaN(scoreNum)) {
-                        teams.push({ 
-                            klas: klas, 
-                            scoreDisplay: scoreNum.toString().replace('.', ','), 
-                            scoreValue: scoreNum 
-                        });
-                    }
-                }
-            }
-
-            if (teams.length === 0) {
-                boardContent.innerHTML = `<div class="error">No valid data found in the CSV.</div>`;
-                return;
-            }
-
-            teams.sort((a, b) => b.scoreValue - a.scoreValue);
-
-            teams.forEach((team, index) => {
-                const rank = index + 1;
-                const rowDiv = document.createElement('div');
-                rowDiv.className = `row rank-${rank}`;
-                rowDiv.innerHTML = `
-                    <div class="col-rank">${rank}</div>
-                    <div class="col-class">${team.klas}</div>
-                    <div class="col-score">${team.scoreDisplay}</div>
-                `;
-                boardContent.appendChild(rowDiv);
-            });
+// Timer & Auto-Refresh logic
+function startAutoRefresh() {
+    setInterval(() => {
+        timeLeft--;
+        const timerBar = document.getElementById('timer-bar');
+        if (timerBar) {
+            const percentage = (timeLeft / REFRESH_INTERVAL) * 100;
+            timerBar.style.width = `${percentage}%`;
         }
-        fetchLeaderboard();
+
+        if (timeLeft <= 0) {
+            fetchLeaderboard();
+            timeLeft = REFRESH_INTERVAL;
+        }
+    }, 1000);
+}
+
+// Run initial fetch and start timer
+fetchLeaderboard();
+startAutoRefresh();
     </script>
 </body>
 </html>
