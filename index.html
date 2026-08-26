@@ -104,8 +104,8 @@
     </div>
 
     <script>
-        // Update this URL to your live Google Sheet CSV link or local file
-        const CSV_URL = 'score_Einstein_Games_scores_EV.csv'; 
+        // Data source: Change to your active file
+        const CSV_URL = 'score_Einstein_Games_scores_EV.csv';
 
         async function fetchLeaderboard() {
             try {
@@ -117,72 +117,69 @@
             } catch (error) {
                 console.error('Error fetching data:', error);
                 document.getElementById('board-content').innerHTML = 
-                    `<div class="error">Could not load scores. Check file path or publish settings.</div>`;
+                    `<div class="error">Could not load scores. Please check the file path.</div>`;
             }
-        }
-
-        // A smarter parser that ignores commas inside quotation marks
-        function parseCSVLine(line) {
-            let result = [];
-            let current = '';
-            let inQuotes = false;
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                if (char === '"') {
-                    inQuotes = !inQuotes; // Toggle quote state
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            result.push(current.trim());
-            return result;
         }
 
         function parseAndRenderCSV(csvText) {
-            // Split by line breaks
-            const rows = csvText.split(/\r?\n/).filter(row => row.trim());
+            // A more robust regex to split CSV lines, handling commas inside quotes
+            const rows = csvText.split(/\r?\n/);
             const boardContent = document.getElementById('board-content');
             boardContent.innerHTML = ''; 
 
             let teams = [];
 
-            rows.forEach((row) => {
-                const cols = parseCSVLine(row);
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i].trim();
+                if (!row) continue;
+
+                // This regex splits by comma, but ignores commas inside double quotes
+                // It also removes the surrounding quotes from the resulting strings
+                let cols = [];
+                let match;
+                const regex = /"([^"]*)"|([^,]+)/g;
                 
-                // Based on your data, column 0 is Klas, column 1 is Punten (Score)
+                while (match = regex.exec(row)) {
+                    // match[1] is the value if it was in quotes, match[2] is the value without quotes
+                    cols.push(match[1] !== undefined ? match[1] : match[2]);
+                }
+
+                // Clean up any remaining whitespace
+                cols = cols.map(c => c ? c.trim() : '');
+
                 if (cols.length >= 2) {
                     const klas = cols[0];
-                    const scoreStr = cols[1];
+                    let scoreStr = cols[1];
 
-                    // Skip the header row and any empty/invalid rows
-                    if (!klas || klas.toLowerCase() === 'klas' || klas === 'NaN') return;
+                    // Skip the first two junk rows (NaN and the header row)
+                    if (!klas || klas === 'NaN' || klas.toLowerCase() === 'klas' || klas.toLowerCase() === 'unnamed: 0') {
+                        continue; 
+                    }
 
-                    // Convert the European decimal comma to a dot so JavaScript can read the number
-                    const scoreNum = parseFloat(scoreStr.replace(',', '.'));
+                    // Replace comma with dot for JavaScript math, handle cases where quotes might have leaked
+                    let cleanScoreStr = scoreStr.replace(/"/g, '').replace(',', '.');
+                    const scoreNum = parseFloat(cleanScoreStr);
 
                     if (!isNaN(scoreNum)) {
-                        // Store the data so we can sort it later
                         teams.push({ 
                             klas: klas, 
-                            scoreDisplay: scoreStr, // Keep the original comma for display
+                            // Format back to European style for display
+                            scoreDisplay: scoreNum.toString().replace('.', ','), 
                             scoreValue: scoreNum 
                         });
                     }
                 }
-            });
+            }
 
             if (teams.length === 0) {
-                boardContent.innerHTML = `<div class="error">No data found.</div>`;
+                boardContent.innerHTML = `<div class="error">No valid data found in the CSV.</div>`;
                 return;
             }
 
-            // Sort the teams from highest score to lowest
+            // Sort teams highest to lowest
             teams.sort((a, b) => b.scoreValue - a.scoreValue);
 
-            // Generate the rows dynamically with correct ranks
+            // Render
             teams.forEach((team, index) => {
                 const rank = index + 1;
                 const rowDiv = document.createElement('div');
@@ -201,7 +198,7 @@
         // Initialize
         fetchLeaderboard();
         
-        // Uncomment the line below to refresh the page automatically every 60 seconds
+        // Refresh every 60 seconds (useful if using live Google Sheet link)
         // setInterval(fetchLeaderboard, 60000); 
     </script>
 </body>
