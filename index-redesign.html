@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstein Games - Arena Select</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --bg-deep: #020817;
+            --card-bg: #111827;
+            --panel-bg: rgba(15, 23, 42, 0.8);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-strong: #0ea5e9;
+            --green: #22c55e;
+            --gold: #fbbf24;
+            --shadow: rgba(15, 23, 42, 0.6);
+            --border: rgba(148, 163, 184, 0.2);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(56, 189, 248, 0.18), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.1), transparent 25%),
+                linear-gradient(180deg, var(--bg-deep), var(--bg-color));
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .page-shell {
+            width: min(1100px, 100%);
+        }
+
+        .top-banner {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2.5rem, 5vw, 5rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-main);
+            text-shadow: 0 0 18px rgba(56, 189, 248, 0.25);
+        }
+
+        .subtitle {
+            margin: 1rem auto 0;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .menu-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2.5rem;
+        }
+
+        .menu-card {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: linear-gradient(145deg, rgba(17, 24, 39, 0.98), rgba(15, 23, 42, 0.9));
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 1.4rem 1.2rem;
+            text-decoration: none;
+            color: var(--text-main);
+            box-shadow: 0 20px 40px var(--shadow);
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .menu-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), transparent 45%, rgba(34, 197, 94, 0.08));
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-7px) scale(1.02);
+            border-color: rgba(56, 189, 248, 0.65);
+            box-shadow: 0 25px 45px rgba(14, 165, 233, 0.18);
+        }
+
+        .menu-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            position: relative;
+            z-index: 1;
+            width: 68px;
+            height: 68px;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            background: rgba(56, 189, 248, 0.13);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            font-size: 2rem;
+            box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.08);
+        }
+
+        .card-body {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .card-body h2 {
+            margin: 0;
+            font-size: clamp(1.6rem, 2vw, 2rem);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .card-body p {
+            margin: 0.35rem 0 0;
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .card-tag {
+            position: relative;
+            z-index: 1;
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.45);
+            color: #86efac;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .status-row {
+            margin-top: 2.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .tiny-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0.7rem 1rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .tiny-pill .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        @media (max-width: 640px) {
+            .menu-card {
+                padding: 1rem;
+            }
+
+            .card-icon {
+                width: 58px;
+                height: 58px;
+                font-size: 1.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <div class="top-banner">
+            <div class="eyebrow">Einstein Games</div>
+            <h1>Game Select</h1>
+            <p class="subtitle">Choose your arena</p>
+        </div>
+
+        <div class="menu-container">
+            <a href="scores_ev_redesign.html" class="menu-card">
+                <div class="card-icon">🏆</div>
+                <div class="card-body">
+                    <h2>EV</h2>
+                    <p>Evergem</p>
+                </div>
+                <span class="card-tag">Live</span>
+            </a>
+
+            <a href="scores_oa.html" class="menu-card">
+                <div class="card-icon">🎯</div>
+                <div class="card-body">
+                    <h2>OA</h2>
+                    <p>Oostakker</p>
+                </div>
+                <span class="card-tag">Live</span>
+            </a>
+
+            <a href="scores_kiem.html" class="menu-card">
+                <div class="card-icon">⚡</div>
+                <div class="card-body">
+                    <h2>Kiem</h2>
+                    <p>Kiem</p>
+                </div>
+                <span class="card-tag">Live</span>
+            </a>
+        </div>
+
+        <div class="status-row">
+            <div class="tiny-pill"><span class="dot"></span>Live scoreboards</div>
+            <div class="tiny-pill"><span class="dot"></span>Auto refresh</div>
+            <div class="tiny-pill"><span class="dot"></span>Game mode</div>
+        </div>
+    </div>
+</body>
+</html>
