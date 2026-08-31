@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstein Games - Home</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        p.subtitle { color: var(--text-muted); margin-bottom: 3rem; }
+        .menu-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .menu-btn {
+            background: var(--card-bg);
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 2rem 4rem;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            transition: transform 0.2s, background 0.2s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .menu-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-5px);
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <h1>Einstein Games</h1>
+    <p class="subtitle">Kies een scorebord</p>
+    <div class="menu-container">
+        <a href="scores_ev.html" class="menu-btn">Scores EV</a>
+        <a href="scores_oa.html" class="menu-btn">Scores OA</a>
+        <a href="scores_kiem.html" class="menu-btn">Scores Kiem</a>
+    </div>
+</body>
+</html>
