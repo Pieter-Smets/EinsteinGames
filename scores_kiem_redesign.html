@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Einstein Games - Scores Evergem</title>
+    <title>Einstein Games - Scores Kiem</title>
     <link rel="stylesheet" href="redesign.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
@@ -23,7 +23,7 @@
 
         <div class="header-box">
             <div class="eyebrow">Einstein Games</div>
-            <h1>Scores Evergem</h1>
+            <h1>Scores Kiem</h1>
             <p class="subtitle">Live klassement</p>
         </div>
 
@@ -55,7 +55,7 @@
     </div>
 
     <script>
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRPp-_3q8eKAynOcrOs51zcpUpXEWOO2Bczf5Z6v2YbQ8W-eRYW2t5PnRT4SOVWDTQ-SlJ0dWSdmFu2/pub?gid=0&single=true&output=csv';
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRPp-_3q8eKAynOcrOs51zcpUpXEWOO2Bczf5Z6v2YbQ8W-eRYW2t5PnRT4SOVWDTQ-SlJ0dWSdmFu2/pub?gid=888372540&single=true&output=csv';
         const REFRESH_INTERVAL = 60;
         let timeLeft = REFRESH_INTERVAL;
 
@@ -67,8 +67,7 @@
                 parseAndRenderCSV(csvText);
             } catch (error) {
                 console.error('Error fetching data:', error);
-                document.getElementById('board-content').innerHTML =
-                    '<div class="error">Could not load scores. Please check the file path.</div>';
+                document.getElementById('board-content').innerHTML = '<div class="error">Could not load scores. Please check the file path.</div>';
             }
         }
 
@@ -141,11 +140,7 @@
             });
 
             if (typeof confetti === 'function') {
-                confetti({
-                    particleCount: 80,
-                    spread: 70,
-                    origin: { y: 0.6 }
-                });
+                confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
             }
         }
 
